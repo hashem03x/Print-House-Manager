@@ -14,7 +14,7 @@ A bilingual (Arabic / English) web app for recording and managing printing jobs 
 - **Custom paper sizes:** enter width × height in mm, cm, m or in. Values are stored exactly as entered.
 - **Finding tasks:**
   - search by description
-  - filter by status, paper type and paper size
+  - filter by status, paper type, paper size and paper weight
   - sort by creation date, task date or price
   - server-side pagination
 - **Shareable state:** search, filters, sort and page are kept in the URL, so they survive a refresh and can be shared.
@@ -236,14 +236,22 @@ Error codes:
 |---|---|---|
 | `description` | string | Required, trimmed, at most 500 characters. Stored as typed and never translated |
 | `taskDate` | `"YYYY-MM-DD"` | Required. The job's calendar date, stored as UTC midnight so it never shifts between time zones. It is separate from `createdAt` |
-| `paperType` | string | Required: `glossy`, `matte`, `offset`, `art_paper`, `bond_paper` or `other` |
-| `paperSize` | string | Required: `A2`, `A3`, `A4`, `A5` or `custom` |
+| `paperType` | string | Required: `bristol`, `glossy_heavy`, `glossy_light`, `glossy_two_side`, `matte_sticker` or `glossy_sticker` |
+| `paperSize` | string | Required: `A6`, `A4`, `A5`, `size_9`, `size_18`, `size_16` or `custom` |
+| `paperWeight` | number | **Required for new tasks**: `70`, `80`, `100` or `120` (gsm). Independent of paper type. Must be a JSON number. Older tasks without a weight stay valid |
 | `customPaperSize` | `{ width, height, unit }` | **Required when `paperSize` is `custom`**, otherwise must be absent (or `null` to clear). `width`/`height` are positive numbers; `unit` is `mm`, `cm`, `m` or `in`. Values are stored as entered (up to 3 decimals) and never converted. Each dimension can be at most 10 m in any unit |
 | `price` | number | Required, 0 to 1,000,000,000. Rounded to 2 decimals. Must be a JSON number |
 | `status` | string | `pending` (default) or `completed`. Set only by users, never inferred from dates |
 | `createdAt` / `updatedAt` | ISO date | Set by the server. Client values are ignored and `createdAt` never changes |
 
 Unknown fields (including `_id`, `createdAt`, `updatedAt`) are ignored. Paper and status values are stable, language-independent keys; the frontend translates them for display.
+
+**Retired paper options.** The earlier paper types (`glossy`, `matte`, `offset`, `art_paper`, `bond_paper`, `other`) and sizes (`A2`, `A3`) have no unambiguous equivalent in the current lists, so existing tasks were **not** remapped.
+
+- These values stay stored unchanged and display with their old labels.
+- They remain filterable through the API.
+- Editing such a task may keep its existing value, which the edit form shows as "(no longer offered)".
+- New tasks cannot choose them, and an edit cannot switch to another retired value. Either returns `400` "no longer available".
 
 **Paper size rules on update (`PUT`):**
 
@@ -261,10 +269,11 @@ Unknown fields (including `_id`, `createdAt`, `updatedAt`) are ignored. Paper an
 | `status` | | `pending` (includes legacy tasks without a status) or `completed` |
 | `paperType` | | one of the paper type values |
 | `paperSize` | | one of the paper size values |
+| `paperWeight` | | `70`, `80`, `100` or `120` |
 | `sortBy` | `createdAt` | allowlist: `taskDate`, `createdAt`, `updatedAt`, `price`, `description` |
 | `order` | `desc` | `asc` or `desc` |
 
-Example: `GET /api/tasks?status=pending&search=cards&paperSize=custom&sortBy=taskDate&order=asc&page=1&limit=10`
+Example: `GET /api/tasks?status=pending&search=cards&paperType=bristol&paperWeight=120&sortBy=taskDate&order=asc&page=1&limit=10`
 
 ```json
 {
@@ -276,9 +285,10 @@ Example: `GET /api/tasks?status=pending&search=cards&paperSize=custom&sortBy=tas
         "id": "6708f1a2c3b4d5e6f7a8b901",
         "description": "Wedding cards, 200 copies",
         "taskDate": "2026-10-20T00:00:00.000Z",
-        "paperType": "art_paper",
+        "paperType": "bristol",
         "paperSize": "custom",
         "customPaperSize": { "width": 32, "height": 45, "unit": "cm" },
+        "paperWeight": 120,
         "price": 450,
         "status": "pending",
         "createdAt": "2026-10-11T09:24:00.000Z",
@@ -297,8 +307,9 @@ Example: `GET /api/tasks?status=pending&search=cards&paperSize=custom&sortBy=tas
 {
   "description": "Restaurant menu flyers, 1,000 copies",
   "taskDate": "2026-10-20",
-  "paperType": "glossy",
+  "paperType": "glossy_heavy",
   "paperSize": "A4",
+  "paperWeight": 100,
   "price": 1850
 }
 ```
@@ -309,9 +320,10 @@ With a custom size:
 {
   "description": "Exhibition banner",
   "taskDate": "2026-10-22",
-  "paperType": "other",
+  "paperType": "glossy_sticker",
   "paperSize": "custom",
   "customPaperSize": { "width": 3, "height": 1, "unit": "m" },
+  "paperWeight": 80,
   "price": 1200
 }
 ```
@@ -405,14 +417,14 @@ This returns `200` with the full updated task.
 - The CSS uses only logical properties, and directional icons are mirrored in RTL.
 - Fonts: IBM Plex Sans Arabic and IBM Plex Sans.
 - Dates and currency use `Intl` with Latin digits. Number inputs also accept Arabic-Indic digits (`٣٢٠`) and the Arabic decimal separator (`٫`).
-- To add a paper type, size, status or unit:
+- To add a paper type, size, weight, status or unit:
   1. Add its value to `backend/src/constants/paperOptions.js` and `frontend/src/constants/paperOptions.js`.
   2. Add its label to both dictionaries.
 
 ## Testing
 
 ```bash
-npm test                                   # backend: 104 tests (CRUD, validation, filters, stats, status, custom sizes/units, connection lifecycle, DB outage)
+npm test                                   # backend: 130 tests (CRUD, validation, filters, stats, status, paper types/sizes/weights, legacy values, custom sizes/units, connection lifecycle, DB outage)
 TEST_MONGODB_URI="mongodb+srv://…/printing-house-test?…" npm test --prefix backend   # run against a real cluster
 ```
 

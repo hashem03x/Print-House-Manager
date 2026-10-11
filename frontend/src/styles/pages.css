@@ -700,3 +700,67 @@ button.task-table__description:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Toolbar with five filters: search on its own row, filters wrap below and may
+   shrink (native selects otherwise refuse to go below their longest option). */
+.task-filters {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.task-filters .search-input {
+  max-width: none;
+}
+
+.task-filters__selects {
+  flex-wrap: wrap;
+}
+
+.task-filters__selects .select {
+  flex: 1 1 150px;
+  width: auto;
+  min-width: 0;
+}
+
+.task-filters__selects .task-filters__sort {
+  flex: 1.25 1 180px;
+  width: auto;
+}
+
+.task-filters__clear {
+  flex: 0 0 auto;
+}
+
+/* Contain absolutely positioned descendants (e.g. visually-hidden labels inside
+   cells) within the horizontal scroller, so they cannot widen the page. */
+.table-wrap {
+  position: relative;
+}
+
+/* Desktop table density: nine columns plus actions must fit the card without
+   sideways scrolling at common widths (actions stay visible). */
+@media (min-width: 720px) {
+  .task-table th,
+  .task-table td {
+    padding-inline: var(--space-3);
+  }
+
+  .task-table th:first-child,
+  .task-table td:first-child {
+    padding-inline-start: var(--space-4);
+  }
+
+  .task-table .col-description {
+    min-width: 180px;
+    max-width: 280px;
+  }
+
+  .task-table__actions {
+    gap: 2px;
+  }
+
+  .task-table__actions .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
