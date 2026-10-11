@@ -1,0 +1,26 @@
+{
+  "name": "printing-house-manager-backend",
+  "version": "1.0.0",
+  "description": "REST API for Print House Manager (Express + MongoDB)",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "check": "node --check src/server.js && node --check src/app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "mongoose": "^9.11.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
+  }
+}
