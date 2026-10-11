@@ -55,5 +55,6 @@ export const validTask = Object.freeze({
   paperSize: 'custom',
   paperWeight: 80,
   customPaperSize: Object.freeze({ width: 90, height: 50, unit: 'mm' }),
+  quantity: 1,
   price: 450,
 });

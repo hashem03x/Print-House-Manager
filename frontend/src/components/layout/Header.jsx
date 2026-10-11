@@ -1,6 +1,6 @@
-import { Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n.js';
+import BrandLogo from '../brand/BrandLogo.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 export default function Header() {
@@ -8,13 +8,13 @@ export default function Header() {
 
   return (
     <header className="app-header">
-      <Link to="/" className="brand">
-        <span className="brand__mark" aria-hidden="true">
-          <Printer size={20} strokeWidth={2} />
+      <Link to="/" className="brand" aria-label={t('app.homeLabel')}>
+        <span className="brand__full">
+          <BrandLogo tagline={t('app.tagline')} />
         </span>
-        <span className="brand__text">
-          <span className="brand__name">{t('app.name')}</span>
-          <span className="brand__tagline">{t('app.tagline')}</span>
+        {/* Very narrow screens: compact mark only */}
+        <span className="brand__compact">
+          <BrandLogo variant="compact" />
         </span>
       </Link>
       {/* Process-colour strip: a small nod to CMYK printing */}

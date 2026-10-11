@@ -842,3 +842,93 @@ input[type='date'].input {
 .badge--glossy_two_side .badge__swatch { background: linear-gradient(90deg, #c9dbe0 50%, #ffffff 50%); }
 .badge--matte_sticker .badge__swatch { background: #e6e3dc; border-radius: 50%; }
 .badge--glossy_sticker .badge__swatch { background: linear-gradient(135deg, #ffffff 30%, #c9dbe0); border-radius: 50%; }
+
+/* ---------- Brand: "The Best" ---------- */
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.brand-mark {
+  flex-shrink: 0;
+  display: block;
+}
+
+.brand-mark__crop {
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1.6;
+  stroke-linecap: square;
+}
+
+.brand-mark__plate {
+  fill: var(--color-primary);
+}
+
+.brand-mark__letters {
+  fill: none;
+  stroke: var(--color-on-primary);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand-logo__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Wordmark: tight, confident Latin type in both interface languages */
+.brand-logo__name {
+  font-family: var(--font-latin);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.brand-logo__tagline {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.brand__compact {
+  display: none;
+}
+
+@media (max-width: 359px) {
+  .brand__full {
+    display: none;
+  }
+
+  .brand__compact {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 719px) {
+  .brand-logo__tagline {
+    display: none;
+  }
+}
+
+/* ---------- Quantity / total ---------- */
+.total-output {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding-inline: var(--space-3);
+  border: 1px dashed var(--color-primary-soft-border);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: var(--text-md);
+  font-weight: 700;
+}

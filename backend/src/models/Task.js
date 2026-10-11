@@ -1,16 +1,19 @@
 import mongoose from 'mongoose';
 import {
   DEFAULT_DIMENSION_UNIT,
+  DEFAULT_QUANTITY,
   DEFAULT_TASK_STATUS,
   DIMENSION_UNITS,
   LEGACY_PAPER_SIZES,
   LEGACY_PAPER_TYPES,
   MAX_DIMENSION_MM,
+  MAX_QUANTITY,
   PAPER_SIZES,
   PAPER_TYPES,
   PAPER_WEIGHTS,
   TASK_STATUSES,
 } from '../constants/paperOptions.js';
+import { computeTotal } from '../utils/pricing.js';
 
 const dimension = (label) => ({
   type: Number,
@@ -92,11 +95,21 @@ const taskSchema = new mongoose.Schema(
       type: customPaperSizeSchema,
       default: undefined,
     },
+    // UNIT price. The task total is quantity × price (see utils/pricing.js).
     price: {
       type: Number,
       required: [true, 'Price is required'],
       min: [0, 'Price cannot be negative'],
       max: [1_000_000_000, 'Price is too large'],
+    },
+    // Required for new tasks by the API. Older documents have no quantity and
+    // read back as 1 (default), which keeps their stored price as their total.
+    quantity: {
+      type: Number,
+      default: DEFAULT_QUANTITY,
+      min: [1, 'Quantity must be at least 1'],
+      max: [MAX_QUANTITY, `Quantity cannot exceed ${MAX_QUANTITY}`],
+      validate: { validator: Number.isInteger, message: 'Quantity must be a whole number' },
     },
     // Set explicitly by users; never derived from dates. Older documents without
     // this field read back as "pending" thanks to the default.
@@ -117,6 +130,9 @@ const taskSchema = new mongoose.Schema(
       transform(_doc, ret) {
         ret.id = ret._id.toString();
         ret.status ??= DEFAULT_TASK_STATUS;
+        ret.quantity ??= DEFAULT_QUANTITY;
+        // Computed by the server so every client uses the same rule.
+        ret.total = computeTotal(ret.price, ret.quantity);
         if (ret.customPaperSize) ret.customPaperSize.unit ??= DEFAULT_DIMENSION_UNIT;
         return ret;
       },

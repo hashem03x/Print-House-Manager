@@ -1,10 +1,11 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, CircleCheck, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useI18n } from '../../i18n/useI18n.js';
-import { formatCurrency, formatDate, formatTaskDate, formatTime } from '../../utils/format.js';
+import { formatCurrency, formatDate, formatNumber, formatTaskDate, formatTime } from '../../utils/format.js';
+import { taskTotal } from '../../utils/pricing.js';
 import IconButton from '../common/IconButton.jsx';
 import { PaperSizeBadge, PaperTypeBadge, PaperWeightBadge, StatusBadge } from '../common/PaperBadges.jsx';
 
-const SORTABLE = ['taskDate', 'price', 'createdAt'];
+const SORTABLE = ['taskDate', 'total', 'createdAt'];
 
 function SortableHeader({ field, label, sort, onSortChange, className = '' }) {
   const { t } = useI18n();
@@ -57,7 +58,8 @@ export default function TaskTable({
     paperType: t('tasks.table.paperType'),
     paperSize: t('tasks.table.paperSize'),
     paperWeight: t('tasks.table.paperWeight'),
-    price: t('tasks.table.price'),
+    quantity: t('tasks.table.quantity'),
+    total: t('tasks.table.total'),
     createdAt: t('tasks.table.createdAt'),
     actions: t('tasks.table.actions'),
   };
@@ -81,7 +83,8 @@ export default function TaskTable({
             {header('paperType')}
             {header('paperSize')}
             {header('paperWeight')}
-            {header('price', 'col-num')}
+            {header('quantity', 'col-num col-qty')}
+            {header('total', 'col-num')}
             {header('createdAt')}
             <th scope="col" className="col-actions">
               <span className="visually-hidden">{columns.actions}</span>
@@ -117,8 +120,19 @@ export default function TaskTable({
               <td data-label={columns.paperWeight}>
                 <PaperWeightBadge value={task.paperWeight} />
               </td>
-              <td data-label={columns.price} className="col-num num nowrap">
-                {formatCurrency(task.price, locale, numberingSystem)}
+              <td data-label={columns.quantity} className="col-num col-qty num nowrap">
+                {formatNumber(task.quantity ?? 1, locale, numberingSystem)}
+              </td>
+              <td data-label={columns.total} className="col-num num nowrap">
+                <span className="task-table__total">
+                  {formatCurrency(taskTotal(task), locale, numberingSystem)}
+                  <span className="task-table__unit">
+                    {t('tasks.table.totalBreakdown', {
+                      quantity: task.quantity ?? 1,
+                      unitPrice: formatCurrency(task.price, locale, numberingSystem),
+                    })}
+                  </span>
+                </span>
               </td>
               <td data-label={columns.createdAt} className="nowrap">
                 <span className="task-table__created">

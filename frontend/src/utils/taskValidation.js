@@ -2,6 +2,7 @@ import {
   CUSTOM_PAPER_SIZE,
   DIMENSION_UNITS,
   MAX_DIMENSION_MM,
+  MAX_QUANTITY,
   PAPER_SIZES,
   PAPER_TYPES,
   PAPER_WEIGHTS,
@@ -73,6 +74,11 @@ export function validateTaskForm(values, original) {
     if (heightError) errors.customHeight = heightError;
   }
 
+  const quantity = normalizeNumericInput(values.quantity);
+  if (!quantity) errors.quantity = 'validation.quantityRequired';
+  else if (!/^\d+$/.test(quantity) || Number(quantity) < 1) errors.quantity = 'validation.quantityInvalid';
+  else if (Number(quantity) > MAX_QUANTITY) errors.quantity = 'validation.quantityTooLarge';
+
   const price = normalizeNumericInput(values.price);
   if (!price) errors.price = 'validation.priceRequired';
   else if (price.startsWith('-')) errors.price = 'validation.priceMin';
@@ -101,6 +107,7 @@ export function toTaskPayload(values) {
           unit: values.customUnit,
         }
       : null,
+    quantity: Number(normalizeNumericInput(values.quantity)),
     price: Number(normalizeNumericInput(values.price)),
   };
 }
@@ -109,7 +116,7 @@ export function toTaskPayload(values) {
 export function mapServerErrors(serverErrors) {
   if (!serverErrors) return {};
   const errors = {};
-  for (const field of ['description', 'taskDate', 'paperType', 'paperSize', 'paperWeight', 'price']) {
+  for (const field of ['description', 'taskDate', 'paperType', 'paperSize', 'paperWeight', 'quantity', 'price']) {
     if (serverErrors[field]) errors[field] = `validation.${field}Invalid`;
   }
   if (serverErrors['customPaperSize.width']) errors.customWidth = 'validation.widthInvalid';

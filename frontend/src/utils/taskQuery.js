@@ -9,6 +9,8 @@ export const SORT_OPTIONS = [
   'createdAt:asc',
   'taskDate:desc',
   'taskDate:asc',
+  'total:desc',
+  'total:asc',
   'price:desc',
   'price:asc',
 ];

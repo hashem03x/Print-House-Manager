@@ -2,6 +2,7 @@ import { ArrowRight, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n/useI18n.js';
 import { formatCurrency, formatTaskDate } from '../../utils/format.js';
+import { taskTotal } from '../../utils/pricing.js';
 import Card from '../common/Card.jsx';
 import EmptyState from '../common/EmptyState.jsx';
 import { PaperSizeBadge, PaperTypeBadge, PaperWeightBadge, StatusBadge } from '../common/PaperBadges.jsx';
@@ -51,7 +52,15 @@ export default function LatestTasksCard({ tasks, loading, onView, emptyAction })
                   <span className="latest-tasks__date">{formatTaskDate(task.taskDate, locale, numberingSystem)}</span>
                 </span>
               </span>
-              <span className="latest-tasks__price num">{formatCurrency(task.price, locale, numberingSystem)}</span>
+              <span className="latest-tasks__price num">
+                {formatCurrency(taskTotal(task), locale, numberingSystem)}
+                <span className="latest-tasks__unit">
+                  {t('tasks.table.totalBreakdown', {
+                    quantity: task.quantity ?? 1,
+                    unitPrice: formatCurrency(task.price, locale, numberingSystem),
+                  })}
+                </span>
+              </span>
             </button>
           </li>
         ))}

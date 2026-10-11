@@ -12,11 +12,13 @@ import {
 import { useI18n } from '../../i18n/useI18n.js';
 import { createTask, updateTask } from '../../services/taskApi.js';
 import { getErrorMessageKey } from '../../utils/apiErrors.js';
-import { toDateInputValue, todayInputValue } from '../../utils/format.js';
+import { formatCurrency, toDateInputValue, todayInputValue } from '../../utils/format.js';
+import { computeTotal } from '../../utils/pricing.js';
 import {
   DESCRIPTION_MAX_LENGTH,
   mapServerErrors,
   toTaskPayload,
+  normalizeNumericInput,
   validateTaskForm,
 } from '../../utils/taskValidation.js';
 import Button from '../common/Button.jsx';
@@ -27,6 +29,7 @@ import Select from '../common/Select.jsx';
 const FIELD_IDS = {
   description: 'task-description',
   taskDate: 'task-date',
+  quantity: 'task-quantity',
   price: 'task-price',
   paperType: 'task-paper-type',
   paperSize: 'task-paper-size',
@@ -38,6 +41,7 @@ const FIELD_IDS = {
 const FIELD_ORDER = [
   'description',
   'taskDate',
+  'quantity',
   'price',
   'paperType',
   'paperSize',
@@ -58,6 +62,7 @@ function initialValues(task) {
       customWidth: '',
       customHeight: '',
       customUnit: DEFAULT_DIMENSION_UNIT,
+      quantity: '1',
       price: '',
     };
   }
@@ -72,6 +77,8 @@ function initialValues(task) {
     customHeight: task.customPaperSize?.height != null ? String(task.customPaperSize.height) : '',
     // Older custom sizes have no unit: they are millimeters.
     customUnit: task.customPaperSize?.unit ?? DEFAULT_DIMENSION_UNIT,
+    // Older tasks have no quantity: they count as 1 (their price is their total).
+    quantity: String(task.quantity ?? 1),
     price: String(task.price),
   };
 }
@@ -86,7 +93,7 @@ function initialValues(task) {
  * @param onError (error) => void — called when the save fails for non-validation reasons.
  */
 export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, onError }) {
-  const { t } = useI18n();
+  const { t, locale, numberingSystem } = useI18n();
   const isEdit = mode === 'edit';
 
   const [values, setValues] = useState(() => initialValues(task));
@@ -153,6 +160,14 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
   const hasErrors = Object.keys(errors).length > 0;
   const descriptionLength = values.description.trim().length;
   const isCustomSize = values.paperSize === CUSTOM_PAPER_SIZE;
+
+  // Live total (quantity × unit price), shown only when both inputs are valid.
+  const typedQuantity = normalizeNumericInput(values.quantity);
+  const typedPrice = normalizeNumericInput(values.price);
+  const liveTotal =
+    /^\d+$/.test(typedQuantity) && Number(typedQuantity) >= 1 && /^\d+(\.\d{1,2})?$/.test(typedPrice)
+      ? computeTotal(Number(typedPrice), Number(typedQuantity))
+      : null;
 
   // Current options, plus the task's own retired value (if any) so it can be kept.
   const optionsWithOriginal = (current, field, labelPrefix) => {
@@ -282,6 +297,32 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
           </FormField>
 
           <FormField
+            id={FIELD_IDS.quantity}
+            label={t('taskForm.quantity')}
+            required
+            requiredLabel={t('taskForm.required')}
+            hint={t('taskForm.quantityHint')}
+            error={error('quantity')}
+          >
+            <input
+              id={FIELD_IDS.quantity}
+              name="quantity"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              dir="ltr"
+              className="input num input--numeric"
+              required
+              value={values.quantity}
+              onChange={handleChange}
+              aria-invalid={Boolean(errors.quantity) || undefined}
+              aria-describedby={describedBy(FIELD_IDS.quantity, t('taskForm.quantityHint'), error('quantity'))}
+            />
+          </FormField>
+        </div>
+
+        <div className="task-form__row pricing-row">
+          <FormField
             id={FIELD_IDS.price}
             label={`${t('taskForm.price')} (${APP_CONFIG.currency})`}
             required
@@ -306,6 +347,22 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
               aria-describedby={describedBy(FIELD_IDS.price, t('taskForm.priceHint'), error('price'))}
             />
           </FormField>
+
+          <div className="form-field">
+            <span className="form-field__label" id="task-total-label">
+              {t('taskForm.total')}
+            </span>
+            <output
+              id="task-total"
+              className="total-output num"
+              aria-labelledby="task-total-label"
+              aria-live="polite"
+              htmlFor={`${FIELD_IDS.quantity} ${FIELD_IDS.price}`}
+            >
+              {liveTotal === null ? '—' : formatCurrency(liveTotal, locale, numberingSystem)}
+            </output>
+            <p className="form-field__hint">{t('taskForm.totalHint')}</p>
+          </div>
         </div>
 
         <div className="task-form__row task-form__row--3">

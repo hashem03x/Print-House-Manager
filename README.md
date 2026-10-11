@@ -1,6 +1,8 @@
-# Print House Manager
+# The Best — Print House Manager
 
-A bilingual (Arabic / English) web app for recording and managing printing jobs such as business cards, flyers, banners and documents.
+**The Best** is a bilingual (Arabic / English) web app for recording and managing printing jobs such as business cards, flyers, banners, carbonless forms and documents.
+
+Branding (name, monogram, theme colour) is centralised in `frontend/src/config/brand.js`. The logo is `<BrandMark />` in `frontend/src/components/brand/BrandLogo.jsx`: a "TB" monogram on an ink plate framed by printer's crop marks. Its static copies are `frontend/public/favicon.svg` and `frontend/public/brand-mark.svg` (the loading screen). To rebrand, edit these files and the `<meta>`/`<title>` tags in `frontend/index.html`.
 
 | Part | Stack |
 |---|---|
@@ -10,6 +12,7 @@ A bilingual (Arabic / English) web app for recording and managing printing jobs 
 **Features**
 
 - **Tasks:** create, view details, edit and delete tasks. Deleting asks for confirmation.
+- **Quantity and pricing:** each task has a quantity and a unit price. **Total = quantity × unit price**, shown live in the form, in the table, in task details and on the dashboard.
 - **Status:** mark a task Pending or Completed. Changing it updates the row in place, without reloading the list.
 - **Custom paper sizes:** enter width × height in mm, cm, m or in. Values are stored exactly as entered.
 - **Finding tasks:**
@@ -236,11 +239,13 @@ Error codes:
 |---|---|---|
 | `description` | string | Required, trimmed, at most 500 characters. Stored as typed and never translated |
 | `taskDate` | `"YYYY-MM-DD"` | Required. The job's calendar date, stored as UTC midnight so it never shifts between time zones. It is separate from `createdAt` |
-| `paperType` | string | Required: `bristol`, `glossy_heavy`, `glossy_light`, `glossy_two_side`, `matte_sticker` or `glossy_sticker` |
+| `paperType` | string | Required: `bristol`, `glossy_heavy`, `glossy_light`, `glossy_two_side`, `matte_sticker`, `glossy_sticker`, `carbon_original_copy` (carbonless original + 1 copy) or `carbon_original_two_copies` (original + 2 copies) |
 | `paperSize` | string | Required: `A6`, `A4`, `A5`, `size_9`, `size_18`, `size_16` or `custom` |
 | `paperWeight` | number | **Required for new tasks**: `70`, `80`, `100` or `120` (gsm). Independent of paper type. Must be a JSON number. Older tasks without a weight stay valid |
 | `customPaperSize` | `{ width, height, unit }` | **Required when `paperSize` is `custom`**, otherwise must be absent (or `null` to clear). `width`/`height` are positive numbers; `unit` is `mm`, `cm`, `m` or `in`. Values are stored as entered (up to 3 decimals) and never converted. Each dimension can be at most 10 m in any unit |
-| `price` | number | Required, 0 to 1,000,000,000. Rounded to 2 decimals. Must be a JSON number |
+| `price` | number | Required **unit price**, 0 to 1,000,000,000. Rounded to 2 decimals. Must be a JSON number. Never replaced by the total |
+| `quantity` | integer | **Required for new tasks**: whole number from 1 to 1,000,000. Older tasks without a quantity read as `1`, so their stored price stays their total |
+| `total` | number | **Read-only, computed by the server**: quantity × price, rounded to 2 decimals. Ignored if sent |
 | `status` | string | `pending` (default) or `completed`. Set only by users, never inferred from dates |
 | `createdAt` / `updatedAt` | ISO date | Set by the server. Client values are ignored and `createdAt` never changes |
 
@@ -270,7 +275,7 @@ Unknown fields (including `_id`, `createdAt`, `updatedAt`) are ignored. Paper an
 | `paperType` | | one of the paper type values |
 | `paperSize` | | one of the paper size values |
 | `paperWeight` | | `70`, `80`, `100` or `120` |
-| `sortBy` | `createdAt` | allowlist: `taskDate`, `createdAt`, `updatedAt`, `price`, `description` |
+| `sortBy` | `createdAt` | allowlist: `taskDate`, `createdAt`, `updatedAt`, `price` (unit price), `total` (quantity × price), `quantity`, `description` |
 | `order` | `desc` | `asc` or `desc` |
 
 Example: `GET /api/tasks?status=pending&search=cards&paperType=bristol&paperWeight=120&sortBy=taskDate&order=asc&page=1&limit=10`
@@ -289,7 +294,9 @@ Example: `GET /api/tasks?status=pending&search=cards&paperType=bristol&paperWeig
         "paperSize": "custom",
         "customPaperSize": { "width": 32, "height": 45, "unit": "cm" },
         "paperWeight": 120,
-        "price": 450,
+        "quantity": 200,
+        "price": 2.25,
+        "total": 450,
         "status": "pending",
         "createdAt": "2026-10-11T09:24:00.000Z",
         "updatedAt": "2026-10-11T09:24:00.000Z"
@@ -310,7 +317,8 @@ Example: `GET /api/tasks?status=pending&search=cards&paperType=bristol&paperWeig
   "paperType": "glossy_heavy",
   "paperSize": "A4",
   "paperWeight": 100,
-  "price": 1850
+  "quantity": 1000,
+  "price": 1.85
 }
 ```
 
@@ -324,6 +332,7 @@ With a custom size:
   "paperSize": "custom",
   "customPaperSize": { "width": 3, "height": 1, "unit": "m" },
   "paperWeight": 80,
+  "quantity": 1,
   "price": 1200
 }
 ```
@@ -359,7 +368,7 @@ This returns `200` with the full updated task.
     "tasksToday": 3,
     "pendingTasks": 30,
     "completedTasks": 12,
-    "totalValue": 18645.5,
+    "totalValue": 18645.5,      // sum of task totals (quantity × unit price)
     "latestTasks": [ /* 5 newest tasks by createdAt */ ],
     "timeZone": "Africa/Cairo",
     "todayStart": "2026-10-10T21:00:00.000Z"
@@ -424,7 +433,7 @@ This returns `200` with the full updated task.
 ## Testing
 
 ```bash
-npm test                                   # backend: 130 tests (CRUD, validation, filters, stats, status, paper types/sizes/weights, legacy values, custom sizes/units, connection lifecycle, DB outage)
+npm test                                   # backend: 153 tests (CRUD, validation, filters, stats, status, quantity & totals, paper types/sizes/weights, legacy values, custom sizes/units, connection lifecycle, DB outage)
 TEST_MONGODB_URI="mongodb+srv://…/printing-house-test?…" npm test --prefix backend   # run against a real cluster
 ```
 

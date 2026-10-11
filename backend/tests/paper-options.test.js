@@ -10,7 +10,7 @@ import {
 import { startTestApi } from './helpers.js';
 
 let api;
-const base = { description: 'Job', taskDate: '2026-10-20', paperType: 'bristol', paperSize: 'A4', paperWeight: 120, price: 100 };
+const base = { description: 'Job', taskDate: '2026-10-20', paperType: 'bristol', paperSize: 'A4', paperWeight: 120, quantity: 1, price: 100 };
 const PREDEFINED_SIZES = PAPER_SIZES.filter((size) => size !== 'custom');
 
 before(async () => {
@@ -27,7 +27,7 @@ beforeEach(async () => {
 
 describe('Current paper types, sizes and weights', () => {
   test('the configured options match the specification', () => {
-    assert.deepEqual([...PAPER_TYPES], ['bristol', 'glossy_heavy', 'glossy_light', 'glossy_two_side', 'matte_sticker', 'glossy_sticker']);
+    assert.deepEqual([...PAPER_TYPES], ['bristol', 'glossy_heavy', 'glossy_light', 'glossy_two_side', 'matte_sticker', 'glossy_sticker', 'carbon_original_copy', 'carbon_original_two_copies']);
     assert.deepEqual([...PAPER_SIZES], ['A6', 'A4', 'A5', 'size_9', 'size_18', 'size_16', 'custom']);
     assert.deepEqual([...PAPER_WEIGHTS], [70, 80, 100, 120]);
   });
@@ -186,6 +186,7 @@ describe('Existing (legacy) tasks', () => {
       paperType: 'offset',
       paperSize: 'A3',
       paperWeight: 100,
+      quantity: 1,
       price: 1300,
       customPaperSize: null,
     });

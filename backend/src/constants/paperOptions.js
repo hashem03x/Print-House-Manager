@@ -12,6 +12,8 @@ export const PAPER_TYPES = Object.freeze([
   'glossy_two_side',
   'matte_sticker',
   'glossy_sticker',
+  'carbon_original_copy', // carbonless: original + 1 copy
+  'carbon_original_two_copies', // carbonless: original + 2 copies
 ]);
 
 // Earlier paper types. They have no unambiguous equivalent in the current list,
@@ -26,6 +28,11 @@ export const LEGACY_PAPER_SIZES = Object.freeze(['A2', 'A3']);
 
 // When paperSize is "custom", customPaperSize { width, height, unit } is required.
 export const CUSTOM_PAPER_SIZE = 'custom';
+
+// Number of items in a task. Tasks created before this field existed are
+// treated as quantity 1, so their stored price remains their total.
+export const DEFAULT_QUANTITY = 1;
+export const MAX_QUANTITY = 1_000_000;
 
 // Paper weights in grams per square meter (gsm). Independent of paper type.
 export const PAPER_WEIGHTS = Object.freeze([70, 80, 100, 120]);

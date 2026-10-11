@@ -1,7 +1,16 @@
 // Stable values — must match backend/src/constants/paperOptions.js.
 // Display labels live in the translation dictionaries under
 // `paperTypes.<value>`, `paperSizes.<value>` and `status.<value>`.
-export const PAPER_TYPES = ['bristol', 'glossy_heavy', 'glossy_light', 'glossy_two_side', 'matte_sticker', 'glossy_sticker'];
+export const PAPER_TYPES = [
+  'bristol',
+  'glossy_heavy',
+  'glossy_light',
+  'glossy_two_side',
+  'matte_sticker',
+  'glossy_sticker',
+  'carbon_original_copy',
+  'carbon_original_two_copies',
+];
 
 // Retired values that may still exist on older tasks: shown with their labels,
 // kept when such a task is edited, but not offered for new choices.
@@ -9,6 +18,10 @@ export const LEGACY_PAPER_TYPES = ['glossy', 'matte', 'offset', 'art_paper', 'bo
 
 export const PAPER_SIZES = ['A6', 'A4', 'A5', 'size_9', 'size_18', 'size_16', 'custom'];
 export const LEGACY_PAPER_SIZES = ['A2', 'A3'];
+
+// Whole number of items per task. Older tasks without one count as 1.
+export const DEFAULT_QUANTITY = 1;
+export const MAX_QUANTITY = 1_000_000;
 
 // Grams per square meter. Labels: `paperWeights.<value>`.
 export const PAPER_WEIGHTS = [70, 80, 100, 120];

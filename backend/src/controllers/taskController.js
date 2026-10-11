@@ -14,9 +14,11 @@ import { Task } from '../models/Task.js';
 import { ApiError } from '../utils/ApiError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 import { startOfDayInTimeZone } from '../utils/dates.js';
+import { totalExpression } from '../utils/pricing.js';
 
 // Explicit allowlist: only these fields can be used for sorting.
-const SORTABLE_FIELDS = ['taskDate', 'createdAt', 'updatedAt', 'price', 'description'];
+// "price" sorts by unit price; "total" by quantity × unit price.
+const SORTABLE_FIELDS = ['taskDate', 'createdAt', 'updatedAt', 'price', 'total', 'quantity', 'description'];
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 const LATEST_TASKS_LIMIT = 5;
@@ -98,11 +100,24 @@ function parseListQuery(query) {
 export async function getTasks(req, res) {
   const { filter, sort, page, limit } = parseListQuery(req.query);
 
+  const skip = (page - 1) * limit;
   const [tasks, total] = await Promise.all([
-    Task.find(filter)
-      .sort(sort)
-      .skip((page - 1) * limit)
-      .limit(limit),
+    sort.total !== undefined || sort.quantity !== undefined
+      ? // Computed sort keys need an aggregation; results are hydrated so the
+        // response shape (id, defaults, total) is identical to find().
+        Task.aggregate([
+          { $match: filter },
+          { $addFields: { _sortTotal: totalExpression, _sortQuantity: { $ifNull: ['$quantity', 1] } } },
+          {
+            $sort: sort.total !== undefined
+              ? { _sortTotal: sort.total, _id: sort._id }
+              : { _sortQuantity: sort.quantity, _id: sort._id },
+          },
+          { $skip: skip },
+          { $limit: limit },
+          { $project: { _sortTotal: 0, _sortQuantity: 0 } },
+        ]).then((docs) => docs.map((doc) => Task.hydrate(doc)))
+      : Task.find(filter).sort(sort).skip(skip).limit(limit),
     Task.countDocuments(filter),
   ]);
 
@@ -135,7 +150,8 @@ export async function getTaskStats(_req, res) {
         $group: {
           _id: null,
           totalTasks: { $sum: 1 },
-          totalValue: { $sum: '$price' },
+          // Sum of task totals (quantity × unit price), not of unit prices.
+          totalValue: { $sum: totalExpression },
           completedTasks: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
         },
       },

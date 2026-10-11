@@ -68,7 +68,7 @@ describe('POST /api/tasks', () => {
     const { status, body } = await api.request('POST', '/tasks', {});
     assert.equal(status, 400);
     assert.equal(body.success, false);
-    assert.deepEqual(Object.keys(body.errors).sort(), ['description', 'paperSize', 'paperType', 'paperWeight', 'price', 'taskDate']);
+    assert.deepEqual(Object.keys(body.errors).sort(), ['description', 'paperSize', 'paperType', 'paperWeight', 'price', 'quantity', 'taskDate']);
   });
 
   const invalidCases = [
@@ -181,7 +181,7 @@ describe('DELETE /api/tasks/:id', () => {
 
 describe('GET /api/tasks (list)', () => {
   const seeds = [
-    { description: 'Flyers glossy', taskDate: '2026-10-05', paperType: 'glossy_heavy', paperSize: 'A4', paperWeight: 100, price: 100 },
+    { description: 'Flyers glossy', taskDate: '2026-10-05', paperType: 'glossy_heavy', paperSize: 'A4', paperWeight: 100, quantity: 1, price: 100 },
     {
       description: 'Banner opening (a+b)',
       taskDate: '2026-10-01',
@@ -189,11 +189,12 @@ describe('GET /api/tasks (list)', () => {
       paperSize: 'custom',
       customPaperSize: { width: 3, height: 1, unit: 'm' },
       paperWeight: 120,
+      quantity: 1,
       price: 900,
     },
-    { description: 'كروت شخصية', taskDate: '2026-10-03', paperType: 'matte_sticker', paperSize: 'A5', paperWeight: 100, price: 300 },
-    { description: 'Letterheads', taskDate: '2026-10-04', paperType: 'bristol', paperSize: 'A4', paperWeight: 100, price: 50 },
-    { description: 'Flyers matte', taskDate: '2026-10-02', paperType: 'matte_sticker', paperSize: 'A4', paperWeight: 100, price: 200 },
+    { description: 'كروت شخصية', taskDate: '2026-10-03', paperType: 'matte_sticker', paperSize: 'A5', paperWeight: 100, quantity: 1, price: 300 },
+    { description: 'Letterheads', taskDate: '2026-10-04', paperType: 'bristol', paperSize: 'A4', paperWeight: 100, quantity: 1, price: 50 },
+    { description: 'Flyers matte', taskDate: '2026-10-02', paperType: 'matte_sticker', paperSize: 'A4', paperWeight: 100, quantity: 1, price: 200 },
   ];
 
   beforeEach(async () => {

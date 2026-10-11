@@ -4,7 +4,8 @@ import { useApiResource } from '../../hooks/useApiResource.js';
 import { useI18n } from '../../i18n/useI18n.js';
 import { getTask } from '../../services/taskApi.js';
 import { getErrorMessageKey, isTaskNotFound } from '../../utils/apiErrors.js';
-import { formatCurrency, formatDateTime, formatTaskDate } from '../../utils/format.js';
+import { formatCurrency, formatDateTime, formatNumber, formatTaskDate } from '../../utils/format.js';
+import { taskTotal } from '../../utils/pricing.js';
 import Button from '../common/Button.jsx';
 import ErrorState from '../common/ErrorState.jsx';
 import Modal from '../common/Modal.jsx';
@@ -106,8 +107,16 @@ export default function TaskDetailsModal({ task: initialTask, onClose, onEdit, o
                 <dd>{formatTaskDate(task.taskDate, locale, numberingSystem)}</dd>
               </div>
               <div>
-                <dt>{t('tasks.table.price')}</dt>
-                <dd className="num task-details__price">{formatCurrency(task.price, locale, numberingSystem)}</dd>
+                <dt>{t('tasks.table.quantity')}</dt>
+                <dd className="num">{formatNumber(task.quantity ?? 1, locale, numberingSystem)}</dd>
+              </div>
+              <div>
+                <dt>{t('tasks.table.unitPrice')}</dt>
+                <dd className="num">{formatCurrency(task.price, locale, numberingSystem)}</dd>
+              </div>
+              <div>
+                <dt>{t('tasks.table.total')}</dt>
+                <dd className="num task-details__price">{formatCurrency(taskTotal(task), locale, numberingSystem)}</dd>
               </div>
               <div>
                 <dt>{t('tasks.table.paperType')}</dt>

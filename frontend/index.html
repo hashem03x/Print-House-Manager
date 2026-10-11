@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Branding: keep in sync with src/config/brand.js -->
+    <meta name="application-name" content="The Best" />
+    <meta name="apple-mobile-web-app-title" content="The Best" />
+    <meta name="description" content="The Best — printing task management / إدارة مهام الطباعة" />
     <meta name="theme-color" content="#0e5a6b" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,7 +15,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
-    <title>مدير المطبعة</title>
+    <title>The Best</title>
     <script>
       // Apply the saved language direction before React renders to avoid a layout flash.
       try {
@@ -22,9 +26,16 @@
         }
       } catch (e) {}
     </script>
+    <style>
+      /* Branded loading screen, replaced as soon as React mounts. */
+      .boot { min-height: 100vh; display: grid; place-items: center; background: #f5f4f0; }
+      .boot img { width: 64px; height: 64px; opacity: 0.9; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" aria-hidden="true"><img src="/brand-mark.svg" alt="" /></div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@ import {
   LEGACY_PAPER_SIZES,
   LEGACY_PAPER_TYPES,
   MAX_DIMENSION_MM,
+  MAX_QUANTITY,
   PAPER_SIZES,
   PAPER_TYPES,
   PAPER_WEIGHTS,
@@ -60,6 +61,12 @@ const requiredFieldValidators = {
     // Store money with at most two decimal places.
     return { value: Math.round(value * 100) / 100 };
   },
+  quantity(value) {
+    if (typeof value !== 'number' || !Number.isInteger(value)) return 'Quantity must be a whole number';
+    if (value < 1) return 'Quantity must be at least 1';
+    if (value > MAX_QUANTITY) return `Quantity cannot exceed ${MAX_QUANTITY}`;
+    return { value };
+  },
 };
 
 const FIELD_LABELS = {
@@ -69,6 +76,7 @@ const FIELD_LABELS = {
   paperSize: 'Paper size',
   paperWeight: 'Paper weight',
   price: 'Price',
+  quantity: 'Quantity',
 };
 
 export function validateStatusValue(value) {
