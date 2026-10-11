@@ -40,6 +40,20 @@ export function PaperSizeBadge({ value, dimensions }) {
   );
 }
 
+/** Paper weight (gsm); older tasks may not have one. */
+export function PaperWeightBadge({ value }) {
+  const { t } = useI18n();
+  if (value == null) {
+    return (
+      <span className="badge badge--weight badge--empty" title={t('common.notSet')}>
+        <span aria-hidden="true">—</span>
+        <span className="visually-hidden">{t('common.notSet')}</span>
+      </span>
+    );
+  }
+  return <span className="badge badge--weight">{t(`paperWeights.${value}`)}</span>;
+}
+
 export function StatusBadge({ status }) {
   const { t } = useI18n();
   const value = status === 'completed' ? 'completed' : 'pending';

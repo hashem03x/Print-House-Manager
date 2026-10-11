@@ -1,5 +1,5 @@
 import { ArrowDownUp, X } from 'lucide-react';
-import { PAPER_SIZES, PAPER_TYPES, TASK_STATUSES } from '../../constants/paperOptions.js';
+import { PAPER_SIZES, PAPER_TYPES, PAPER_WEIGHTS, TASK_STATUSES } from '../../constants/paperOptions.js';
 import { useI18n } from '../../i18n/useI18n.js';
 import { SORT_OPTIONS } from '../../utils/taskQuery.js';
 import Button from '../common/Button.jsx';
@@ -11,12 +11,14 @@ export default function TaskFilters({
   searchText,
   paperType,
   paperSize,
+  paperWeight,
   status,
   sort,
   showClear,
   onSearchTextChange,
   onPaperTypeChange,
   onPaperSizeChange,
+  onPaperWeightChange,
   onStatusChange,
   onSortChange,
   onClear,
@@ -25,6 +27,7 @@ export default function TaskFilters({
 
   const paperTypeOptions = PAPER_TYPES.map((value) => ({ value, label: t(`paperTypes.${value}`) }));
   const paperSizeOptions = PAPER_SIZES.map((value) => ({ value, label: t(`paperSizes.${value}`) }));
+  const paperWeightOptions = PAPER_WEIGHTS.map((value) => ({ value: String(value), label: t(`paperWeights.${value}`) }));
   const statusOptions = TASK_STATUSES.map((value) => ({ value, label: t(`status.${value}`) }));
   const sortOptions = SORT_OPTIONS.map((value) => ({ value, label: t(`tasks.sort.${value}`) }));
 
@@ -62,6 +65,14 @@ export default function TaskFilters({
           value={paperSize}
           onChange={(event) => onPaperSizeChange(event.target.value)}
           className={paperSize ? 'is-active' : ''}
+        />
+        <Select
+          aria-label={t('tasks.paperWeightFilter')}
+          placeholder={t('tasks.allPaperWeights')}
+          options={paperWeightOptions}
+          value={paperWeight}
+          onChange={(event) => onPaperWeightChange(event.target.value)}
+          className={paperWeight ? 'is-active' : ''}
         />
         <Select
           aria-label={t('tasks.sortLabel')}

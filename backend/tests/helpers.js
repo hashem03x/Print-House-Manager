@@ -51,8 +51,9 @@ export async function startTestApi({ timeZone = 'Africa/Cairo' } = {}) {
 export const validTask = Object.freeze({
   description: '500 business cards',
   taskDate: '2026-10-20',
-  paperType: 'matte',
+  paperType: 'matte_sticker',
   paperSize: 'custom',
+  paperWeight: 80,
   customPaperSize: Object.freeze({ width: 90, height: 50, unit: 'mm' }),
   price: 450,
 });

@@ -81,7 +81,7 @@ export default function TasksPage() {
 
   function clearFilters() {
     setSearchText('');
-    updateQuery({ search: '', paperType: '', paperSize: '', status: '' });
+    updateQuery({ search: '', paperType: '', paperSize: '', paperWeight: '', status: '' });
   }
 
   let content;
@@ -171,12 +171,14 @@ export default function TasksPage() {
             searchText={searchText}
             paperType={query.paperType}
             paperSize={query.paperSize}
+            paperWeight={query.paperWeight}
             status={query.status}
             sort={query.sort}
             showClear={filtersActive}
             onSearchTextChange={setSearchText}
             onPaperTypeChange={(paperType) => updateQuery({ paperType })}
             onPaperSizeChange={(paperSize) => updateQuery({ paperSize })}
+            onPaperWeightChange={(paperWeight) => updateQuery({ paperWeight })}
             onStatusChange={(status) => updateQuery({ status })}
             onSortChange={(sort) => updateQuery({ sort })}
             onClear={clearFilters}

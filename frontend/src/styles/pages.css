@@ -689,3 +689,14 @@ button.task-table__description:focus-visible {
 .latest-tasks__item--button .latest-tasks__main {
   flex: 1;
 }
+
+/* Paper type / size / weight on one row */
+.task-form__row--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 719px) {
+  .task-form__row--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

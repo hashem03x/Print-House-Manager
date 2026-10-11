@@ -4,6 +4,7 @@ import {
   MAX_DIMENSION_MM,
   PAPER_SIZES,
   PAPER_TYPES,
+  PAPER_WEIGHTS,
 } from '../constants/paperOptions.js';
 
 // Mirrors backend rules for instant feedback. The backend remains authoritative.
@@ -42,9 +43,11 @@ function validateDimension(raw, field, unit) {
 
 /**
  * @param values Raw form values (strings).
+ * @param original The task being edited (if any): its existing retired paper
+ *   type/size may be kept, but cannot be newly chosen.
  * @returns Map of field -> translation key. Empty object when valid.
  */
-export function validateTaskForm(values) {
+export function validateTaskForm(values, original) {
   const errors = {};
 
   const description = values.description.trim();
@@ -54,8 +57,12 @@ export function validateTaskForm(values) {
   if (!values.taskDate) errors.taskDate = 'validation.taskDateRequired';
   else if (!isValidCalendarDate(values.taskDate)) errors.taskDate = 'validation.taskDateInvalid';
 
-  if (!PAPER_TYPES.includes(values.paperType)) errors.paperType = 'validation.paperTypeRequired';
-  if (!PAPER_SIZES.includes(values.paperSize)) errors.paperSize = 'validation.paperSizeRequired';
+  const keepsOriginal = (field) => Boolean(original) && values[field] === original[field];
+  if (!PAPER_TYPES.includes(values.paperType) && !keepsOriginal('paperType')) errors.paperType = 'validation.paperTypeRequired';
+  if (!PAPER_SIZES.includes(values.paperSize) && !keepsOriginal('paperSize')) errors.paperSize = 'validation.paperSizeRequired';
+  if (!PAPER_WEIGHTS.includes(Number(values.paperWeight)) || values.paperWeight === '') {
+    errors.paperWeight = 'validation.paperWeightRequired';
+  }
 
   // Dimensions are only validated (and only submitted) for a custom size.
   if (values.paperSize === CUSTOM_PAPER_SIZE) {
@@ -86,6 +93,7 @@ export function toTaskPayload(values) {
     taskDate: values.taskDate,
     paperType: values.paperType,
     paperSize: values.paperSize,
+    paperWeight: Number(values.paperWeight),
     customPaperSize: isCustom
       ? {
           width: Number(normalizeNumericInput(values.customWidth)),
@@ -101,7 +109,7 @@ export function toTaskPayload(values) {
 export function mapServerErrors(serverErrors) {
   if (!serverErrors) return {};
   const errors = {};
-  for (const field of ['description', 'taskDate', 'paperType', 'paperSize', 'price']) {
+  for (const field of ['description', 'taskDate', 'paperType', 'paperSize', 'paperWeight', 'price']) {
     if (serverErrors[field]) errors[field] = `validation.${field}Invalid`;
   }
   if (serverErrors['customPaperSize.width']) errors.customWidth = 'validation.widthInvalid';

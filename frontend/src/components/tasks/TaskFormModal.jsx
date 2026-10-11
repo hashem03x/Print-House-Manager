@@ -7,6 +7,7 @@ import {
   DIMENSION_UNITS,
   PAPER_SIZES,
   PAPER_TYPES,
+  PAPER_WEIGHTS,
 } from '../../constants/paperOptions.js';
 import { useI18n } from '../../i18n/useI18n.js';
 import { createTask, updateTask } from '../../services/taskApi.js';
@@ -29,6 +30,7 @@ const FIELD_IDS = {
   price: 'task-price',
   paperType: 'task-paper-type',
   paperSize: 'task-paper-size',
+  paperWeight: 'task-paper-weight',
   customWidth: 'task-custom-width',
   customHeight: 'task-custom-height',
   customUnit: 'task-custom-unit',
@@ -39,6 +41,7 @@ const FIELD_ORDER = [
   'price',
   'paperType',
   'paperSize',
+  'paperWeight',
   'customWidth',
   'customHeight',
   'customUnit',
@@ -51,6 +54,7 @@ function initialValues(task) {
       taskDate: todayInputValue(),
       paperType: '',
       paperSize: '',
+      paperWeight: '',
       customWidth: '',
       customHeight: '',
       customUnit: DEFAULT_DIMENSION_UNIT,
@@ -62,6 +66,8 @@ function initialValues(task) {
     taskDate: toDateInputValue(task.taskDate),
     paperType: task.paperType,
     paperSize: task.paperSize,
+    // Older tasks may have no weight: the user must pick one when saving.
+    paperWeight: task.paperWeight != null ? String(task.paperWeight) : '',
     customWidth: task.customPaperSize?.width != null ? String(task.customPaperSize.width) : '',
     customHeight: task.customPaperSize?.height != null ? String(task.customPaperSize.height) : '',
     // Older custom sizes have no unit: they are millimeters.
@@ -107,7 +113,7 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
     // Changing the unit never alters the numbers the user typed.
     setValues(next);
     // After the first submit attempt, re-validate as the user types.
-    if (submitted) setErrors(validateTaskForm(next));
+    if (submitted) setErrors(validateTaskForm(next, task));
   }
 
   async function handleSubmit(event) {
@@ -116,7 +122,7 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
 
     setSubmitted(true);
     setFormError(null);
-    const fieldErrors = validateTaskForm(values);
+    const fieldErrors = validateTaskForm(values, task);
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length > 0) {
       focusFirstError(fieldErrors);
@@ -147,6 +153,16 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
   const hasErrors = Object.keys(errors).length > 0;
   const descriptionLength = values.description.trim().length;
   const isCustomSize = values.paperSize === CUSTOM_PAPER_SIZE;
+
+  // Current options, plus the task's own retired value (if any) so it can be kept.
+  const optionsWithOriginal = (current, field, labelPrefix) => {
+    const options = current.map((value) => ({ value, label: t(`${labelPrefix}.${value}`) }));
+    const originalValue = task?.[field];
+    if (originalValue && !current.includes(originalValue)) {
+      options.push({ value: originalValue, label: t('taskForm.legacyOption', { label: t(`${labelPrefix}.${originalValue}`) }) });
+    }
+    return options;
+  };
 
   const dimensionField = (field, labelKey, placeholderKey) => (
     <FormField
@@ -292,7 +308,7 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
           </FormField>
         </div>
 
-        <div className="task-form__row">
+        <div className="task-form__row task-form__row--3">
           <FormField
             id={FIELD_IDS.paperType}
             label={t('taskForm.paperType')}
@@ -305,7 +321,7 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
               name="paperType"
               required
               placeholder={t('taskForm.paperTypePlaceholder')}
-              options={PAPER_TYPES.map((value) => ({ value, label: t(`paperTypes.${value}`) }))}
+              options={optionsWithOriginal(PAPER_TYPES, 'paperType', 'paperTypes')}
               value={values.paperType}
               onChange={handleChange}
               invalid={Boolean(errors.paperType)}
@@ -325,11 +341,31 @@ export default function TaskFormModal({ mode = 'add', task, onClose, onSaved, on
               name="paperSize"
               required
               placeholder={t('taskForm.paperSizePlaceholder')}
-              options={PAPER_SIZES.map((value) => ({ value, label: t(`paperSizes.${value}`) }))}
+              options={optionsWithOriginal(PAPER_SIZES, 'paperSize', 'paperSizes')}
               value={values.paperSize}
               onChange={handleChange}
               invalid={Boolean(errors.paperSize)}
               aria-describedby={describedBy(FIELD_IDS.paperSize, undefined, error('paperSize'))}
+            />
+          </FormField>
+
+          <FormField
+            id={FIELD_IDS.paperWeight}
+            label={t('taskForm.paperWeight')}
+            required
+            requiredLabel={t('taskForm.required')}
+            error={error('paperWeight')}
+          >
+            <Select
+              id={FIELD_IDS.paperWeight}
+              name="paperWeight"
+              required
+              placeholder={t('taskForm.paperWeightPlaceholder')}
+              options={PAPER_WEIGHTS.map((value) => ({ value: String(value), label: t(`paperWeights.${value}`) }))}
+              value={values.paperWeight}
+              onChange={handleChange}
+              invalid={Boolean(errors.paperWeight)}
+              aria-describedby={describedBy(FIELD_IDS.paperWeight, undefined, error('paperWeight'))}
             />
           </FormField>
         </div>

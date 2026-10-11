@@ -2,8 +2,11 @@ import { env } from '../config/env.js';
 import {
   CUSTOM_PAPER_SIZE,
   DEFAULT_DIMENSION_UNIT,
+  LEGACY_PAPER_SIZES,
+  LEGACY_PAPER_TYPES,
   PAPER_SIZES,
   PAPER_TYPES,
+  PAPER_WEIGHTS,
   TASK_STATUSES,
 } from '../constants/paperOptions.js';
 import { checkPaperSizeConsistency } from '../middleware/validateTask.js';
@@ -45,14 +48,22 @@ function parseListQuery(query) {
 
   const paperType = single(query.paperType)?.trim();
   if (paperType) {
-    if (PAPER_TYPES.includes(paperType)) filter.paperType = paperType;
+    // Legacy values remain filterable so older tasks can still be found.
+    if (PAPER_TYPES.includes(paperType) || LEGACY_PAPER_TYPES.includes(paperType)) filter.paperType = paperType;
     else errors.paperType = `paperType must be one of: ${PAPER_TYPES.join(', ')}`;
   }
 
   const paperSize = single(query.paperSize)?.trim();
   if (paperSize) {
-    if (PAPER_SIZES.includes(paperSize)) filter.paperSize = paperSize;
+    if (PAPER_SIZES.includes(paperSize) || LEGACY_PAPER_SIZES.includes(paperSize)) filter.paperSize = paperSize;
     else errors.paperSize = `paperSize must be one of: ${PAPER_SIZES.join(', ')}`;
+  }
+
+  const paperWeight = single(query.paperWeight)?.trim();
+  if (paperWeight) {
+    const weight = Number(paperWeight);
+    if (PAPER_WEIGHTS.includes(weight)) filter.paperWeight = weight;
+    else errors.paperWeight = `paperWeight must be one of: ${PAPER_WEIGHTS.join(', ')}`;
   }
 
   const status = single(query.status)?.trim();
@@ -175,6 +186,15 @@ export async function updateTask(req, res) {
 
   // req.taskData contains only whitelisted fields, so createdAt can never be overwritten.
   const { customPaperSize, ...changes } = req.taskData;
+
+  // A retired paper type/size may be kept (sent back unchanged) but not newly chosen.
+  const legacyErrors = {};
+  for (const field of req.legacyFields ?? []) {
+    if (changes[field] !== task[field]) {
+      legacyErrors[field] = `"${changes[field]}" is no longer available; choose one of the current options`;
+    }
+  }
+  if (Object.keys(legacyErrors).length > 0) throw ApiError.badRequest('Validation failed', legacyErrors);
   const finalSize = changes.paperSize ?? task.paperSize;
 
   // Resolve dimensions against the stored task: keep saved ones when the size stays

@@ -56,7 +56,7 @@ test('a cold app (no server.js) connects on the first request and serves data', 
   const created = await fetch(`${base}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description: 'cold start', taskDate: '2026-10-11', paperType: 'matte', paperSize: 'A4', price: 5 }),
+    body: JSON.stringify({ description: 'cold start', taskDate: '2026-10-11', paperType: 'matte_sticker', paperSize: 'A4', paperWeight: 100, price: 5 }),
   });
   assert.equal(created.status, 201);
 

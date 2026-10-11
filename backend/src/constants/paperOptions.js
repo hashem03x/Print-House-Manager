@@ -6,18 +6,29 @@
  * frontend translation dictionaries). No schema migration is needed.
  */
 export const PAPER_TYPES = Object.freeze([
-  'glossy',
-  'matte',
-  'offset',
-  'art_paper',
-  'bond_paper',
-  'other',
+  'bristol',
+  'glossy_heavy',
+  'glossy_light',
+  'glossy_two_side',
+  'matte_sticker',
+  'glossy_sticker',
 ]);
 
-export const PAPER_SIZES = Object.freeze(['A2', 'A3', 'A4', 'A5', 'custom']);
+// Earlier paper types. They have no unambiguous equivalent in the current list,
+// so stored tasks keep them unchanged: still readable and filterable, and an
+// edit may keep the task's existing legacy value, but new values cannot be set.
+export const LEGACY_PAPER_TYPES = Object.freeze(['glossy', 'matte', 'offset', 'art_paper', 'bond_paper', 'other']);
+
+export const PAPER_SIZES = Object.freeze(['A6', 'A4', 'A5', 'size_9', 'size_18', 'size_16', 'custom']);
+
+// Earlier predefined sizes, kept readable on existing tasks (same rules as above).
+export const LEGACY_PAPER_SIZES = Object.freeze(['A2', 'A3']);
 
 // When paperSize is "custom", customPaperSize { width, height, unit } is required.
 export const CUSTOM_PAPER_SIZE = 'custom';
+
+// Paper weights in grams per square meter (gsm). Independent of paper type.
+export const PAPER_WEIGHTS = Object.freeze([70, 80, 100, 120]);
 
 // Units for custom dimensions, with their size in millimeters. Values are stored
 // exactly as entered in the chosen unit (never converted). Older custom-size

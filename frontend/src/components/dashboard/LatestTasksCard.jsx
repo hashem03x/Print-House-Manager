@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n/useI18n.js';
 import { formatCurrency, formatTaskDate } from '../../utils/format.js';
 import Card from '../common/Card.jsx';
 import EmptyState from '../common/EmptyState.jsx';
-import { PaperSizeBadge, PaperTypeBadge, StatusBadge } from '../common/PaperBadges.jsx';
+import { PaperSizeBadge, PaperTypeBadge, PaperWeightBadge, StatusBadge } from '../common/PaperBadges.jsx';
 
 export default function LatestTasksCard({ tasks, loading, onView, emptyAction }) {
   const { t, locale, numberingSystem } = useI18n();
@@ -47,6 +47,7 @@ export default function LatestTasksCard({ tasks, loading, onView, emptyAction })
                   <StatusBadge status={task.status} />
                   <PaperTypeBadge value={task.paperType} />
                   <PaperSizeBadge value={task.paperSize} dimensions={task.customPaperSize} />
+                  {task.paperWeight != null && <PaperWeightBadge value={task.paperWeight} />}
                   <span className="latest-tasks__date">{formatTaskDate(task.taskDate, locale, numberingSystem)}</span>
                 </span>
               </span>

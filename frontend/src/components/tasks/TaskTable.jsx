@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, CircleCheck, Eye, Pencil, RotateCcw, T
 import { useI18n } from '../../i18n/useI18n.js';
 import { formatCurrency, formatDate, formatTaskDate, formatTime } from '../../utils/format.js';
 import IconButton from '../common/IconButton.jsx';
-import { PaperSizeBadge, PaperTypeBadge, StatusBadge } from '../common/PaperBadges.jsx';
+import { PaperSizeBadge, PaperTypeBadge, PaperWeightBadge, StatusBadge } from '../common/PaperBadges.jsx';
 
 const SORTABLE = ['taskDate', 'price', 'createdAt'];
 
@@ -56,6 +56,7 @@ export default function TaskTable({
     taskDate: t('tasks.table.taskDate'),
     paperType: t('tasks.table.paperType'),
     paperSize: t('tasks.table.paperSize'),
+    paperWeight: t('tasks.table.paperWeight'),
     price: t('tasks.table.price'),
     createdAt: t('tasks.table.createdAt'),
     actions: t('tasks.table.actions'),
@@ -79,6 +80,7 @@ export default function TaskTable({
             {header('taskDate')}
             {header('paperType')}
             {header('paperSize')}
+            {header('paperWeight')}
             {header('price', 'col-num')}
             {header('createdAt')}
             <th scope="col" className="col-actions">
@@ -111,6 +113,9 @@ export default function TaskTable({
               </td>
               <td data-label={columns.paperSize}>
                 <PaperSizeBadge value={task.paperSize} dimensions={task.customPaperSize} />
+              </td>
+              <td data-label={columns.paperWeight}>
+                <PaperWeightBadge value={task.paperWeight} />
               </td>
               <td data-label={columns.price} className="col-num num nowrap">
                 {formatCurrency(task.price, locale, numberingSystem)}

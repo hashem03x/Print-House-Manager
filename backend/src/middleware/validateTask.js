@@ -1,9 +1,12 @@
 import {
   CUSTOM_PAPER_SIZE,
   DIMENSION_UNITS,
+  LEGACY_PAPER_SIZES,
+  LEGACY_PAPER_TYPES,
   MAX_DIMENSION_MM,
   PAPER_SIZES,
   PAPER_TYPES,
+  PAPER_WEIGHTS,
   TASK_STATUSES,
 } from '../constants/paperOptions.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -30,17 +33,25 @@ const requiredFieldValidators = {
     if (!date) return 'Task date must be a valid date in YYYY-MM-DD format';
     return { value: date };
   },
+  // Legacy values are accepted here and flagged; whether they are allowed is
+  // decided later (never on create, only "unchanged" on update).
   paperType(value) {
-    if (typeof value !== 'string' || !PAPER_TYPES.includes(value.trim())) {
-      return `Paper type must be one of: ${PAPER_TYPES.join(', ')}`;
-    }
-    return { value: value.trim() };
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+    if (PAPER_TYPES.includes(trimmed)) return { value: trimmed };
+    if (LEGACY_PAPER_TYPES.includes(trimmed)) return { value: trimmed, legacy: true };
+    return `Paper type must be one of: ${PAPER_TYPES.join(', ')}`;
   },
   paperSize(value) {
-    if (typeof value !== 'string' || !PAPER_SIZES.includes(value.trim())) {
-      return `Paper size must be one of: ${PAPER_SIZES.join(', ')}`;
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+    if (PAPER_SIZES.includes(trimmed)) return { value: trimmed };
+    if (LEGACY_PAPER_SIZES.includes(trimmed)) return { value: trimmed, legacy: true };
+    return `Paper size must be one of: ${PAPER_SIZES.join(', ')}`;
+  },
+  paperWeight(value) {
+    if (typeof value !== 'number' || !PAPER_WEIGHTS.includes(value)) {
+      return `Paper weight must be one of: ${PAPER_WEIGHTS.join(', ')} (gsm)`;
     }
-    return { value: value.trim() };
+    return { value };
   },
   price(value) {
     if (typeof value !== 'number' || !Number.isFinite(value)) return 'Price must be a number';
@@ -56,6 +67,7 @@ const FIELD_LABELS = {
   taskDate: 'Task date',
   paperType: 'Paper type',
   paperSize: 'Paper size',
+  paperWeight: 'Paper weight',
   price: 'Price',
 };
 
@@ -140,6 +152,7 @@ export function validateTaskBody({ partial = false } = {}) {
 
     const errors = {};
     const data = {};
+    const legacyFields = [];
 
     for (const [field, validate] of Object.entries(requiredFieldValidators)) {
       const value = body[field];
@@ -148,8 +161,19 @@ export function validateTaskBody({ partial = false } = {}) {
         continue;
       }
       const result = validate(value);
-      if (typeof result === 'string') errors[field] = result;
-      else data[field] = result.value;
+      if (typeof result === 'string') {
+        errors[field] = result;
+      } else {
+        data[field] = result.value;
+        if (result.legacy) legacyFields.push(field);
+      }
+    }
+
+    // New tasks must use the current options; retired values cannot be chosen.
+    if (!partial) {
+      for (const field of legacyFields) {
+        errors[field] = `"${data[field]}" is no longer available. ${requiredFieldValidators[field]('')}`;
+      }
     }
 
     if (body.status !== undefined) {
@@ -178,6 +202,7 @@ export function validateTaskBody({ partial = false } = {}) {
     }
 
     req.taskData = data;
+    req.legacyFields = legacyFields;
     next();
   };
 }

@@ -3,9 +3,12 @@ import {
   DEFAULT_DIMENSION_UNIT,
   DEFAULT_TASK_STATUS,
   DIMENSION_UNITS,
+  LEGACY_PAPER_SIZES,
+  LEGACY_PAPER_TYPES,
   MAX_DIMENSION_MM,
   PAPER_SIZES,
   PAPER_TYPES,
+  PAPER_WEIGHTS,
   TASK_STATUSES,
 } from '../constants/paperOptions.js';
 
@@ -62,7 +65,8 @@ const taskSchema = new mongoose.Schema(
       required: [true, 'Paper type is required'],
       trim: true,
       enum: {
-        values: PAPER_TYPES,
+        // Legacy values stay valid so existing documents can still be saved.
+        values: [...PAPER_TYPES, ...LEGACY_PAPER_TYPES],
         message: `Paper type must be one of: ${PAPER_TYPES.join(', ')}`,
       },
     },
@@ -71,8 +75,17 @@ const taskSchema = new mongoose.Schema(
       required: [true, 'Paper size is required'],
       trim: true,
       enum: {
-        values: PAPER_SIZES,
+        values: [...PAPER_SIZES, ...LEGACY_PAPER_SIZES],
         message: `Paper size must be one of: ${PAPER_SIZES.join(', ')}`,
+      },
+    },
+    // Grams per square meter. Required for new tasks by the API; not required by
+    // the schema so tasks created before this field existed remain valid.
+    paperWeight: {
+      type: Number,
+      enum: {
+        values: PAPER_WEIGHTS,
+        message: `Paper weight must be one of: ${PAPER_WEIGHTS.join(', ')}`,
       },
     },
     customPaperSize: {
@@ -114,6 +127,7 @@ const taskSchema = new mongoose.Schema(
 taskSchema.index({ taskDate: -1 });
 taskSchema.index({ createdAt: -1 });
 taskSchema.index({ paperType: 1, paperSize: 1 });
+taskSchema.index({ paperWeight: 1 });
 taskSchema.index({ status: 1 });
 
 export const Task = mongoose.model('Task', taskSchema);

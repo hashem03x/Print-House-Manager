@@ -66,7 +66,7 @@ describe('Task status', () => {
     await api.Task.collection.insertOne({
       description: 'legacy job',
       taskDate: new Date('2026-01-01T00:00:00Z'),
-      paperType: 'matte',
+      paperType: 'matte_sticker',
       paperSize: 'A4',
       price: 10,
       createdAt: now,
@@ -104,11 +104,11 @@ describe('Task status', () => {
         status: i % 2 === 0 ? 'completed' : 'pending',
       });
     }
-    await api.request('POST', '/tasks', { ...predefined, description: 'Banner', paperType: 'glossy', status: 'completed' });
+    await api.request('POST', '/tasks', { ...predefined, description: 'Banner', paperType: 'glossy_heavy', status: 'completed' });
 
     const { body } = await api.request(
       'GET',
-      '/tasks?status=completed&search=flyer&paperType=matte&paperSize=A4&sortBy=price&order=desc&limit=2&page=1'
+      '/tasks?status=completed&search=flyer&paperType=matte_sticker&paperSize=A4&sortBy=price&order=desc&limit=2&page=1'
     );
     assert.equal(body.data.pagination.total, 3);
     assert.equal(body.data.pagination.totalPages, 2);
@@ -164,9 +164,9 @@ describe('Custom paper size', () => {
 
   test('switching custom -> predefined clears stored dimensions', async () => {
     const task = (await api.request('POST', '/tasks', custom)).body.data;
-    const { status, body } = await api.request('PUT', `/tasks/${task.id}`, { paperSize: 'A3', customPaperSize: null });
+    const { status, body } = await api.request('PUT', `/tasks/${task.id}`, { paperSize: 'size_9', customPaperSize: null });
     assert.equal(status, 200);
-    assert.equal(body.data.paperSize, 'A3');
+    assert.equal(body.data.paperSize, 'size_9');
     assert.equal(body.data.customPaperSize, undefined);
     const stored = await api.Task.findById(task.id).lean();
     assert.equal(stored.customPaperSize, undefined);
@@ -257,7 +257,7 @@ describe('Custom paper size units', () => {
     const { insertedId } = await api.Task.collection.insertOne({
       description: 'legacy custom',
       taskDate: new Date('2026-01-01T00:00:00Z'),
-      paperType: 'other',
+      paperType: 'glossy_sticker',
       paperSize: 'custom',
       customPaperSize: { width: 500, height: 700 },
       price: 10,

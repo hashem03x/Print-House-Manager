@@ -8,7 +8,7 @@ import { formatCurrency, formatDateTime, formatTaskDate } from '../../utils/form
 import Button from '../common/Button.jsx';
 import ErrorState from '../common/ErrorState.jsx';
 import Modal from '../common/Modal.jsx';
-import { PaperSizeBadge, PaperTypeBadge, StatusBadge } from '../common/PaperBadges.jsx';
+import { PaperSizeBadge, PaperTypeBadge, PaperWeightBadge, StatusBadge } from '../common/PaperBadges.jsx';
 import Spinner from '../common/Spinner.jsx';
 import { useTaskStatusToggle } from './useTaskStatusToggle.js';
 
@@ -116,6 +116,10 @@ export default function TaskDetailsModal({ task: initialTask, onClose, onEdit, o
               <div>
                 <dt>{t('tasks.table.paperSize')}</dt>
                 <dd><PaperSizeBadge value={task.paperSize} dimensions={task.customPaperSize} /></dd>
+              </div>
+              <div>
+                <dt>{t('tasks.table.paperWeight')}</dt>
+                <dd><PaperWeightBadge value={task.paperWeight} /></dd>
               </div>
               <div>
                 <dt>{t('taskDetails.createdAt')}</dt>
