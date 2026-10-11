@@ -85,6 +85,7 @@ In development the frontend calls `/api` on its own origin, and Vite forwards th
 | `CLIENT_URL` | `http://localhost:5173` | Origins allowed by CORS. Separate several with commas |
 | `APP_TIMEZONE` | `Africa/Cairo` | IANA time zone that defines "today" for dashboard statistics (default `UTC`) |
 | `NODE_ENV` | `production` | `production` hides internal error details in API responses |
+| `DB_CONNECT_TIMEOUT_MS` | `7000` | Optional. Maximum time for one connection attempt. Keep it below your host's function time limit |
 
 `.env` files are git-ignored. Never put real credentials in `.env.example`. When the API logs a connection string, it replaces the credentials with `***`.
 
@@ -92,7 +93,7 @@ In development the frontend calls `/api` on its own origin, and Vite forwards th
 
 | Variable | Example | Purpose |
 |---|---|---|
-| `VITE_API_URL` | `https://print-house-api.onrender.com/api` | Backend URL for **production builds**. Leave empty in development |
+| `VITE_API_URL` | `https://print-house-api.onrender.com/api` | Backend URL for **production builds**. Leave empty in development. `/api` is added if you leave it off |
 | `VITE_DEV_PROXY_TARGET` | `http://localhost:5000` | Development only: where Vite forwards `/api` |
 
 Other presentation settings (currency, default language) are in `frontend/src/config/appConfig.js`.
@@ -122,6 +123,39 @@ No migrations are needed. Collections and indexes are created automatically. Tas
 
 ## Deployment
 
+### How the backend connects to MongoDB
+
+The API works both as a long-running server and as a serverless function:
+
+- **Persistent server** (`npm start` / `npm run dev`: local, Render, Railway, VPS): `src/server.js` connects first, retrying up to 5 times with backoff, and only then starts listening. If every attempt fails, it exits so the process manager can restart it.
+- **Serverless** (Vercel): the platform imports `src/app.js` directly and never runs `server.js`. The connection is opened on the first request by the `requireDb` middleware, then cached and reused:
+  - Concurrent requests share one in-flight attempt; there is never one connection per request.
+  - After a failure, requests fail fast for 5 seconds before the next attempt.
+  - If an established connection drops, the driver reconnects by itself while requests briefly wait.
+
+`GET /api/health` opens the connection if needed and reports the real state. If the database is down, `data.databaseReason` gives a sanitized cause and the server log gives the full, credential-free detail:
+
+| `databaseReason` | What to check |
+|---|---|
+| `missing_configuration` | `MONGODB_URI` is not set in the host's environment variables. Add it, then **redeploy** |
+| `invalid_uri` | The URI format is wrong. URL-encode special characters in the password (`@` → `%40`, `#` → `%23`, `/` → `%2F`) |
+| `authentication_failed` | Wrong username or password, or the user lacks access to the database |
+| `dns_resolution_failed` | The cluster hostname in the URI is wrong |
+| `network_access_denied` / `timeout` | Atlas **Network Access** does not allow the server's IP |
+| `connection_refused` | Nothing is listening at that host/port (local MongoDB not running) |
+
+### Backend on Vercel (current deployment)
+
+- **Root directory:** `backend`. Framework preset: Express or Other; no build step is needed. Vercel serves the Express app exported by `src/app.js`.
+- **Environment variables** (Project → Settings → Environment Variables, for *Production*). `backend/.env` is git-ignored and is **not** deployed.
+  - `MONGODB_URI`: full Atlas URI including `/printing-house`
+  - `CLIENT_URL`: the frontend origin, e.g. `https://print-house-manager-frontend.vercel.app`
+  - `APP_TIMEZONE`, e.g. `Africa/Cairo`
+  - `NODE_ENV=production`
+- **After changing any variable, redeploy.** Running deployments keep the old values.
+- **Atlas Network Access:** Vercel functions have no fixed outbound IPs, so either allow `0.0.0.0/0` with a strong, database-scoped user password, or use Vercel's MongoDB Atlas integration or static-IP add-on.
+- Check `https://<backend>.vercel.app/api/health`. It should show `"database": "connected"` and `"runtime": "serverless"`.
+
 ### Backend (Render, Railway, Fly.io or any Node host)
 
 - **Root directory:** `backend`
@@ -132,7 +166,7 @@ No migrations are needed. Collections and indexes are created automatically. Tas
   - `CLIENT_URL`: your deployed frontend URL, e.g. `https://print-house.netlify.app`, no trailing slash
   - `APP_TIMEZONE`
   - `NODE_ENV=production`
-- **Health check path:** `/api/health`. It returns 200 when the database is connected and 503 otherwise.
+- **Health check path:** `/api/health`. It returns 200 when the database is connected and 503 (with `databaseReason`) otherwise.
 
 ### Frontend (Netlify, Vercel, Cloudflare Pages or any static host)
 
@@ -148,8 +182,9 @@ No migrations are needed. Collections and indexes are created automatically. Tas
 ### Production checklist
 
 - `CLIENT_URL` on the backend exactly matches the frontend origin (scheme + host, no path).
-- `VITE_API_URL` on the frontend points to the backend and ends with `/api`.
-- Atlas Network Access allows the backend host.
+- `VITE_API_URL` on the frontend points to the backend (`/api` is appended if missing). It is read at build time, so rebuild after changing it.
+- Atlas Network Access allows the backend host. `/api/health` shows `network_access_denied` or `timeout` if not.
+- Environment variables are set on the hosting platform (not only in local `.env` files), and the app was redeployed after changing them.
 - `NODE_ENV=production` is set on the backend.
 
 ---
@@ -377,7 +412,7 @@ This returns `200` with the full updated task.
 ## Testing
 
 ```bash
-npm test                                   # backend: 89 tests (CRUD, validation, filters, stats, status, custom sizes/units, DB outage)
+npm test                                   # backend: 104 tests (CRUD, validation, filters, stats, status, custom sizes/units, connection lifecycle, DB outage)
 TEST_MONGODB_URI="mongodb+srv://…/printing-house-test?…" npm test --prefix backend   # run against a real cluster
 ```
 
@@ -389,5 +424,5 @@ TEST_MONGODB_URI="mongodb+srv://…/printing-house-test?…" npm test --prefix b
 - There is no authentication or authorization. Anyone who can reach the API can change data, so add authentication before exposing it publicly.
 - Search uses a case-insensitive regular expression. For very large collections, consider a MongoDB text index or Atlas Search.
 - Updates do not detect conflicts: if two people edit the same task at the same time, the last save wins.
-#   P r i n t - H o u s e - M a n a g e r  
- 
+
+# Print-House-Manager

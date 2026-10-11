@@ -1,5 +1,11 @@
 // Base URL: VITE_API_URL in production, otherwise "/api" (proxied to the backend by Vite in dev).
-const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+// "/api" is appended when missing, so both https://host and https://host/api work.
+export function resolveApiUrl(value) {
+  const base = (value || '/api').trim().replace(/\/+$/, '');
+  return /\/api$/.test(base) ? base : `${base}/api`;
+}
+
+const API_URL = resolveApiUrl(import.meta.env.VITE_API_URL);
 const REQUEST_TIMEOUT_MS = 15000;
 
 export class ApiError extends Error {
