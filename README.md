@@ -389,3 +389,5 @@ TEST_MONGODB_URI="mongodb+srv://…/printing-house-test?…" npm test --prefix b
 - There is no authentication or authorization. Anyone who can reach the API can change data, so add authentication before exposing it publicly.
 - Search uses a case-insensitive regular expression. For very large collections, consider a MongoDB text index or Atlas Search.
 - Updates do not detect conflicts: if two people edit the same task at the same time, the last save wins.
+#   P r i n t - H o u s e - M a n a g e r  
+ 
