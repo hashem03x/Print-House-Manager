@@ -1,12 +1,21 @@
+// Entry point for persistent hosting (local dev, Render, Railway, VPS…).
+// Serverless platforms such as Vercel import src/app.js directly instead; there
+// the database connection is opened lazily by the requireDb middleware.
 import { env } from './config/env.js';
-import { connectDB, disconnectDB } from './config/db.js';
+import { connectWithRetry, disconnectDB } from './config/db.js';
 import app from './app.js';
 
 async function start() {
+  if (env.configErrors.length > 0) {
+    for (const message of env.configErrors) console.error(`[config] ${message}`);
+    if (!env.mongodbUri) process.exit(1);
+  }
+
+  // Accept requests only once MongoDB is reachable (with a few retries).
   try {
-    await connectDB(env.mongodbUri);
+    await connectWithRetry();
   } catch (error) {
-    console.error(`[db] ${error.message}`);
+    console.error(`[db] Giving up: ${error.message}`);
     process.exit(1);
   }
 

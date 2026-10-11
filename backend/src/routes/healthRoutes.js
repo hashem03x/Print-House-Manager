@@ -1,21 +1,40 @@
 import { Router } from 'express';
-import { isDbConnected } from '../config/db.js';
+import { ensureDbConnection, getDbState, getLastDbError, isDbConnected } from '../config/db.js';
+import { env } from '../config/env.js';
 
 const router = Router();
 
-// GET /api/health — 200 when the API and database are up, 503 otherwise.
-router.get('/', (_req, res) => {
-  const dbConnected = isDbConnected();
+/**
+ * GET /api/health
+ * - 200 when the API and the database are both ready.
+ * - 503 when the API is up but the database is not ("degraded").
+ * Opens the connection if needed (bounded by DB_CONNECT_TIMEOUT_MS), so on a
+ * cold serverless instance it reports real readiness, not "not tried yet".
+ * `databaseReason` is a sanitized category (e.g. authentication_failed,
+ * network_access_denied, timeout) — never a connection string or hostname.
+ */
+router.get('/', async (_req, res) => {
+  let reason = null;
+  try {
+    await ensureDbConnection();
+  } catch (error) {
+    reason = error.category ?? 'unknown';
+  }
 
-  res.status(dbConnected ? 200 : 503).json({
-    success: dbConnected,
+  const ready = isDbConnected();
+  res.status(ready ? 200 : 503).json({
+    success: ready,
     data: {
-      status: dbConnected ? 'ok' : 'degraded',
-      database: dbConnected ? 'connected' : 'disconnected',
+      status: ready ? 'ok' : 'degraded',
+      api: 'up',
+      database: getDbState(),
+      databaseReason: ready ? null : reason ?? getLastDbError()?.category ?? 'unknown',
+      configurationValid: env.configErrors.length === 0,
+      runtime: env.isServerless ? 'serverless' : 'server',
       uptimeSeconds: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     },
-    message: dbConnected ? 'API is healthy' : 'API is running but the database is not connected',
+    message: ready ? 'API is healthy' : 'API is running but the database is not connected',
   });
 });
 
